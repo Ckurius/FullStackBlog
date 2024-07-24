@@ -44,7 +44,6 @@ app.put("/posts/:id", async (req, res) => {
       "UPDATE posts SET title = $1, author = $2, content = $3, cover = $4 WHERE id = $5 RETURNING *;",
       [title, author, content, cover, id]
     );
-    pool.release();
     return res.json(rows);
   } catch (error) {
     console.error("Fehler beim Aktualisieren des Posts", error.stack);
