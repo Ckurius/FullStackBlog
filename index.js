@@ -15,45 +15,24 @@ const pool = new Pool({ connectionString: process.env.PG_URI });
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
-// get all posts
-app.get("/posts", async (req, res) => {
-  try {
-    const { rows } = await pool.query("SELECT * FROM posts");
-    return res.status(200).json(rows);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-// get a single post
-app.get("/posts/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await pool.query("SELECT * FROM posts WHERE id = $1", [
-      id,
-    ]);
-    if (!rows.length) throw new Error("Order not found");
-    return res.json(rows);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-// create a post
-app.post("/posts", async (req, res) => {
-  try {
-    const { title, author, content, cover } = req.body;
-    if (!title || !author || !content || !cover)
-      throw new Error("Missing data");
+const posts = [
+  { id: 1, title: 'Post 1', content: 'testcontent1', cover: 'img1' },
+  { id: 2, title: 'Post 2', content: 'testcontent2', cover: 'img2' },
+  { id: 3, title: 'Post 3', content: 'testcontent3', cover: 'img3' },
+]; // Simple array to represent data
 
-    const results = await pool.query(
-      "INSERT INTO posts (title, author, content, cover) VALUES ($1, $2, $3, $4) RETURNING *",
-      [title, author, content, cover]
-    );
-    const posts = results.rows[0];
-    return res.json(posts);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
+app.get('/posts', (req, res) =>
+  res.json({ message: 'Retrieve all posts', posts })
+);
+
+app.get('/posts/:id', (req, res) => {
+  res.json({ message: 'Retrieve a single post by ID' });
 });
+
+app.post('/posts', (req, res) => {
+  res.json({ message: 'Create a new post' });
+});
+
 // update a post
 app.put("/posts/:id", async (req, res) => {
   try {
@@ -65,22 +44,17 @@ app.put("/posts/:id", async (req, res) => {
       "UPDATE posts SET title = $1, author = $2, content = $3, cover = $4 WHERE id = $5 RETURNING *;",
       [title, author, content, cover, id]
     );
-
+    pool.release();
     return res.json(rows);
   } catch (error) {
     console.error("Fehler beim Aktualisieren des Posts", error.stack);
     return res.status(500).json({ error: "Interner Serverfehler" });
   }
 });
-// delete a post
-app.delete("/posts/:id", async (req, res) => {
-  try {
-    const {id} = req.params;
-    await pool.query('DELETE FROM posts WHERE id = $1 RETURNING *', [id]);
-    return res.json({ success: 'Posts deleted' });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
+
+app.delete('/posts/:id', (req, res) =>
+  res.json({ message: 'DELETE a post by id' })
+);
+
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
