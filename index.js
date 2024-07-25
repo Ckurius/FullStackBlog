@@ -1,7 +1,9 @@
+
 import express from 'express'; // Import express
 import cors from 'cors';
 import pg from 'pg';
 const { Pool } = pg;
+
 
 /* Need to run npm i , npm i cors , npm i express , npm i pg , npm i -D dotenv   */
 
@@ -13,23 +15,27 @@ const pool = new Pool({ connectionString: process.env.PG_URI });
 app.use(express.json());
 app.use(cors());
 
+
 // Define a GET route to fetch data from the database
 app.get('/posts', async (req, res) => {
   try {
-    const client = await pool.connect(); // client will be the connection to the database
-    const result = await pool.query('SELECT * FROM posts'); // this is the query to the database
-    const posts = result.rows; // This is the result of the query returned from the database in rows
-    client.release(); // this means that the connection is released /ended
-    res.json(posts); //  res is the response to the client and we are sending the posts
+    const client = await pool.connect(); 
+    const result = await pool.query('SELECT * FROM posts'); 
+
+    const posts = result.rows; 
+    client.release(); 
+    res.json(posts); 
   } catch (err) {
-    console.error('Error executing query', err.stack);
-    res.status(500).send('Error connecting to database');
+
+    console.error("Error executing query", err.stack);
+    res.status(500).send("Error connecting to database");
   }
 });
 
+
 // Define a GET route to fetch a single post by ID
 app.get('/posts/:id', async (req, res) => {
-  const { id } = req.params; // this is the id that is passed in the url
+  const { id } = req.params; 
   try {
     const client = await pool.connect();
     const result = await pool.query('SELECT * FROM posts WHERE id = $1', [id]);
@@ -85,8 +91,28 @@ app.put('/posts/:id', async (req, res) => {
   }
 });
 
-app.delete('/posts/:id', (req, res) =>
-  res.json({ message: 'DELETE a post by id' })
-);
+
+
+app.delete("/posts/:id", async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(
+      "DELETE FROM posts WHERE id = $1 RETURNING *",
+      [req.params.id]
+    );
+    client.release();
+    if (result.rows.length > 0) {
+      res.json({
+        message: "Post deleted successfully",
+        deletedPost: result.rows[0],
+      });
+    } else {
+      res.status(404).send("Post not found");
+    }
+  } catch (err) {
+    console.error("Error deleting post", err.stack);
+    res.status(500).send("Error deleting post");
+  }
+});
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
