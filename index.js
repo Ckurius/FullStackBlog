@@ -46,15 +46,21 @@ app.put("/posts/:id", (req, res) =>
 );
 
 //app.delete("/posts/:id", (req, res) =>
-  //res.json({ message: "DELETE a post by id" })
+//res.json({ message: "DELETE a post by id" })
 
 app.delete("/posts/:id", async (req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query("DELETE FROM posts WHERE id = $1 RETURNING *", [req.params.id]);
+    const result = await client.query(
+      "DELETE FROM posts WHERE id = $1 RETURNING *",
+      [req.params.id]
+    );
     client.release();
     if (result.rows.length > 0) {
-      res.json({ message: "Post deleted successfully", deletedPost: result.rows[0] });
+      res.json({
+        message: "Post deleted successfully",
+        deletedPost: result.rows[0],
+      });
     } else {
       res.status(404).send("Post not found");
     }
@@ -63,7 +69,5 @@ app.delete("/posts/:id", async (req, res) => {
     res.status(500).send("Error deleting post");
   }
 });
-
-);
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
